@@ -1,4 +1,6 @@
 log
+tags
+tests/bash_unit
 .tmp
 *.tmp
 .env
