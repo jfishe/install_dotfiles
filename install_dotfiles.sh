@@ -18,8 +18,8 @@ function Option:config() {
   ### Change the next lines to reflect which flags/options/parameters you need
   ### flag:   switch a flag 'on' / no value specified
   ###     flag|<short>|<long>|<description>
-  ###     e.g. "-v" or "--VERBOSE" for VERBOSE output / default is always 'off'
-  ###     will be available as $<long> in the script e.g. $VERBOSE
+  ###     e.g. "-v" or "--verbose" for verbose output / default is always 'off'
+  ###     will be available as $<long> in the script e.g. $verbose
   ### option: set an option / 1 value specified
   ###     option|<short>|<long>|<description>|<default>
   ###     e.g. "-e <extension>" or "--extension <extension>" for a file extension
@@ -40,12 +40,12 @@ function Option:config() {
   grep <<<"
 #commented lines will be filtered
 flag|h|help|show usage
-flag|Q|QUIET|no output
-flag|V|VERBOSE|also show debug messages
-flag|f|FORCE|do not ask for confirmation (always yes)
-option|L|LOG_DIR|folder for log files |$HOME/log/$script_prefix
-option|T|TMP_DIR|folder for temp files|/tmp/$script_prefix
-#option|W|WIDTH|width of the picture|800
+flag|q|quiet|no output
+flag|v|verbose|also show debug messages
+flag|f|force|do not ask for confirmation (always yes)
+option|l|log_dir|folder for log files |$HOME/log/$script_prefix
+option|t|tmp_dir|folder for temp files|/tmp/$script_prefix
+#option|w|width|width of the picture|800
 choice|1|action|action to perform|action1,action2,check,env,update
 param|?|input|input file/text
 " -v -e '^#' -e '^\s*$'
@@ -149,16 +149,16 @@ temp_files=()
 # removed -e because it made basic [[ testing ]] difficult
 set -uo pipefail
 IFS=$'\n\t'
-FORCE=0
+force=0
 help=0
 
-#to enable VERBOSE even before option parsing
-VERBOSE=0
-[[ $# -gt 0 ]] && [[ $1 == "-v" ]] && VERBOSE=1
+#to enable verbose even before option parsing
+verbose=0
+[[ $# -gt 0 ]] && [[ $1 == "-v" ]] && verbose=1
 
-#to enable QUIET even before option parsing
-QUIET=0
-[[ $# -gt 0 ]] && [[ $1 == "-q" ]] && QUIET=1
+#to enable quiet even before option parsing
+quiet=0
+[[ $# -gt 0 ]] && [[ $1 == "-q" ]] && quiet=1
 
 txtReset=""
 txtError=""
@@ -210,11 +210,11 @@ function IO:initialize() {
 }
 
 function IO:print() {
-  ((QUIET)) && true || printf '%b\n' "$*"
+  ((quiet)) && true || printf '%b\n' "$*"
 }
 
 function IO:debug() {
-  ((VERBOSE)) && IO:print "${txtInfo}# $* ${txtReset}" >&2
+  ((verbose)) && IO:print "${txtInfo}# $* ${txtReset}" >&2
   true
 }
 
@@ -238,7 +238,7 @@ function IO:announce() {
 }
 
 function IO:progress() {
-  ((QUIET)) || (
+  ((quiet)) || (
     local screen_width
     screen_width=$(tput cols 2>/dev/null || echo 80)
     local rest_of_line
@@ -270,7 +270,7 @@ function IO:countdown() {
 
 ### interactive
 function IO:confirm() {
-  ((FORCE)) && return 0
+  ((force)) && return 0
   read -r -p "$1 [y/N] " -n 1
   echo " "
   [[ $REPLY =~ ^[Yy]$ ]]
@@ -642,7 +642,7 @@ function Script:show_required() {
 function Option:initialize() {
   local init_command
   init_command=$(Option:config |
-    grep -v "VERBOSE|" |
+    grep -v "verbose|" |
     awk '
     BEGIN { FS="|"; OFS=" ";}
     $1 ~ /flag/   && $5 == "" {print $3 "=0; "}
@@ -829,7 +829,7 @@ function Os:require() {
   install_instructions="$install_package $1"
   [[ $words -eq 1 ]] && install_instructions="$install_package $2"
   [[ $words -gt 1 ]] && install_instructions="${2:-}"
-  if ((FORCE)); then
+  if ((force)); then
     IO:announce "Installing [$1] ..."
     eval "$install_instructions"
   else
@@ -994,14 +994,14 @@ function Script:meta() {
 
 function Script:initialize() {
   log_file=""
-  if [[ -n "${TMP_DIR:-}" ]]; then
+  if [[ -n "${tmp_dir:-}" ]]; then
     # clean up TMP folder after 1 day
-    Os:folder "$TMP_DIR" 1
+    Os:folder "$tmp_dir" 1
   fi
-  if [[ -n "${LOG_DIR:-}" ]]; then
+  if [[ -n "${log_dir:-}" ]]; then
     # clean up LOG folder after 1 month
-    Os:folder "$LOG_DIR" 30
-    log_file="$LOG_DIR/$script_prefix.$execution_day.log"
+    Os:folder "$log_dir" 30
+    log_file="$log_dir/$script_prefix.$execution_day.log"
     IO:debug "$config_icon log_file: $log_file"
   fi
 }
