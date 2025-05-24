@@ -46,7 +46,7 @@ flag|f|force|do not ask for confirmation (always yes)
 option|l|log_dir|folder for log files |$HOME/log/$script_prefix
 option|t|tmp_dir|folder for temp files|/tmp/$script_prefix
 #option|w|width|width of the picture|800
-choice|1|action|action to perform|action1,action2,check,env,update
+choice|1|action|action to perform|apt_packages,action2,check,env,update
 param|?|input|input file/text
 " -v -e '^#' -e '^\s*$'
 }
@@ -61,10 +61,10 @@ function Script:main() {
   Os:require "awk"
 
   case "${action,,}" in
-  action1)
-    #TIP: use «$script_prefix action1» to ...
-    #TIP:> $script_prefix action1
-    do_action1
+  apt_packages)
+    #TIP: use «$script_prefix apt_packages» to install required apt packages.
+    #TIP:> $script_prefix apt_packages
+    do_apt_packages
     ;;
 
   action2)
@@ -109,13 +109,69 @@ function Script:main() {
 ## Put your helper scripts here
 #####################################################################
 
-function do_action1() {
-  IO:log "action1"
+function do_apt_packages() {
+  IO:log "apt_packages"
   # Examples of required binaries/scripts and how to install them
   # Os:require "ffmpeg"
   # Os:require "convert" "imagemagick"
   # Os:require "IO:progressbar" "basher install pforret/IO:progressbar"
   # (code)
+  declare -A package_to_install=(
+    ["git"]="git"
+    ["git-lfs"]="git-lfs"
+    ["make"]="build-essential"
+    # https://wslutiliti.es/wslu/install.html
+      ["wslview"]="wslu"
+    # Used to access Windows OpenSSH's ssh-agent.
+      ["socat"]="socat"
+    # Msysgit /etc/gitattributes sets astextplain as an executable.
+    # .dotfiles/.gitconfig includes [diff "astextplain"]
+    # run-mailcap --action=cat <file>
+    # https://github.com/msysgit/msysgit/blob/master/bin/astextplain
+      ["antiword"]="antiword"
+      ["docx2txt"]="docx2txt"
+      ["pdftotext"]="poppler-utils"
+    # rc (dotfiles) management
+      ["rcup"]="rcm"
+    # Used by Vimwiki
+    # https://github.com/tools-life/taskwiki
+    # PEP 668 /usr/share/doc/python3.11/README.venv EXTERNALLY-MANAGED
+    # python3-full avoids conflict with miniforge3 vim-python environment.
+      ["task"]="taskwarrior python3-tasklib tasksh python3-full"
+    # Used by Vim
+      ["ctags"]="universal-ctags" # Used by Gutentags in Vim
+      ["gvim"]="vim-gtk3" # GUI Vim with python3
+    # Used by fzf-vim
+    # https://github.com/junegunn/fzf
+    # https://github.com/sharkdp/bat
+    # https://github.com/dandavison/delta
+    # https://github.com/BurntSushi/ripgrep
+    # https://ctags.io/
+      ["batcat"]="bat"
+      ["fdfind"]="fd-find"
+      ["rg"]="ripgrep"
+    # Try Ubuntu first and then Debian
+    # https://wiki.debian.org/Latex
+    # https://tug.org/texlive/debian.html
+    # Required by Jupyter-Book
+    # https://jupyterbook.org/en/stable/advanced/pdf.html#installation-and-setup
+    # Bibtool required by fzf-bibtex
+      ["tex"]="texlive-latex-extra texlive-fonts-extra texlive-xetex latexmk bibtool"
+  )
+
+  declare -a toinstall
+  for key in "${!package_to_install[@]}"; do
+    if [[ $(command -v $key) ]]; then
+      IO:log "${package_to_install[$key]} is already installed."
+    else
+      toinstall=(${toinstall[@]} ${package_to_install["$key"]})
+    fi
+  done
+  [[ -n "${toinstall[@]}" ]] && sudo apt update \
+    && for key in "${toinstall[@]}"; do
+      IO:log "Install ${key}"
+      eval "sudo apt install $key"
+    done
 }
 
 function do_action2() {
