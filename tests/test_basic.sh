@@ -27,6 +27,6 @@ test_usage_shows_option_verbose() {
 }
 
 test_apt_packages() {
-  # script with apt_packages should show option -v or --verbose
-  assert_equals 1 "$("$root_script" apt_packages 2>&1 | grep -c "Selecting previously unselected package")"
+  message=$("$root_script" -v apt_packages 2>&1)
+  assert_equals 1 "$(echo "$message" | grep -c "Selecting previously unselected package")" "$(echo "$message" | awk '{ gsub(/%/, "%%") }1')"
 }
