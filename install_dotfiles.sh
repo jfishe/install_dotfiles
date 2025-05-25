@@ -141,6 +141,7 @@ function do_apt_packages() {
     # Used by Vim
       ["ctags"]="universal-ctags" # Used by Gutentags in Vim
       ["gvim"]="vim-gtk3" # GUI Vim with python3
+      ["shellcheck"]="shellcheck"
     # Used by fzf-vim
     # https://github.com/junegunn/fzf
     # https://github.com/sharkdp/bat
@@ -161,13 +162,14 @@ function do_apt_packages() {
 
   declare -a toinstall
   for key in "${!package_to_install[@]}"; do
-    if [[ $(command -v $key) ]]; then
+    if [[ $(command -v "$key") ]]; then
       IO:log "${package_to_install[$key]} is already installed."
     else
-      toinstall=(${toinstall[@]} ${package_to_install["$key"]})
+      toinstall=("${toinstall[@]}" "${package_to_install["$key"]}")
     fi
   done
-  [[ -n "${toinstall[@]}" ]] && sudo apt update \
+  IFS=''; concat="${toinstall[*]}"; unset IFS
+  [[ -n "$concat" ]] && sudo apt update \
     && for key in "${toinstall[@]}"; do
       IO:log "Install ${key}"
       eval "sudo apt install $key"
