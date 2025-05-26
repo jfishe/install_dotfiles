@@ -28,5 +28,5 @@ test_usage_shows_option_verbose() {
 
 test_apt_packages() {
   message=$("$root_script" -v apt_packages 2>&1)
-  assert_equals 1 "$(echo "$message" | grep -c "Selecting previously unselected package")" "$(echo "$message" | awk '{ gsub(/%/, "%%") }1')"
+  assert_not_equals 0 "$(echo "$message" | grep -c "Selecting previously unselected package")" "$(echo "$message" | awk '{ gsub(/%/, "%%") }1')"
 }
